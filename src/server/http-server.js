@@ -43,7 +43,7 @@ class HttpServer {
     this.app.use('/assets', express.static(path.join(this.projectRoot, 'assets')));
 
     return new Promise((resolve, reject) => {
-      this.server = this.app.listen(this.port, this.host, (error) => {
+      this.server = this.app.listen(this.port, '0.0.0.0', (error) => {
         if (error) {
           reject(error);
         } else {
