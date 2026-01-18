@@ -21,10 +21,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/flick-cli"
+    "url": "https://github.com/AhmadTheTech/flick-cli"
   },
-  "author": "Your Name",
-  "license": "MIT",
+  "author": "Ahmad",
+  "license": "Apache-2.0",
   "dependencies": {
     "commander": "^11.1.0",
     "express": "^4.18.2",
