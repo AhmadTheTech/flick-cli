@@ -1,9 +1,11 @@
+// start.js (UPDATED)
 const chalk = require('chalk');
 const ora = require('ora');
 const FlutterValidator = require('../utils/flutter-validator');
-const HttpServer = require('../server/http-server');
-const WebSocketServer = require('../server/websocket-server');
+const EnhancedHttpServer = require('../server/http-server');
+const EnhancedWebSocketServer = require('../server/websocket-server');
 const FileWatcher = require('../server/file-watcher');
+const DartEvalManager = require('../server/dart-eval-manager');
 const QRGenerator = require('../utils/qr-generator');
 const Logger = require('../utils/logger');
 const ip = require('ip');
@@ -45,14 +47,31 @@ module.exports = async function startCommand(options) {
   const host = options.host || ip.address();
   const port = parseInt(options.port);
 
+  // Initialize dart_eval manager
+  const evalManager = new DartEvalManager();
+  spinner.text = 'Checking dart_eval installation';
+  spinner.start();
+  
+  try {
+    if (!evalManager.isInstalled) {
+      spinner.text = 'Installing dart_eval (this may take a moment)';
+      await evalManager.installDartEval();
+    }
+    spinner.succeed('dart_eval ready');
+  } catch (error) {
+    spinner.warn('dart_eval not available - compilation features disabled');
+    logger.hint('Install it manually: dart pub global activate dart_eval');
+  }
+
   spinner.text = 'Starting HTTP server';
   spinner.start();
   
-  const httpServer = new HttpServer({
+  const httpServer = new EnhancedHttpServer({
     port,
     host,
     projectRoot: process.cwd(),
     projectData,
+    evalManager,
     https: options.https
   });
 
@@ -71,9 +90,10 @@ module.exports = async function startCommand(options) {
     process.exit(1);
   }
 
-  const wsServer = new WebSocketServer({
+  const wsServer = new EnhancedWebSocketServer({
     httpServer: httpServer.getServer(),
-    projectData
+    projectData,
+    projectRoot: process.cwd()
   });
   
   wsServer.start();
@@ -124,6 +144,7 @@ module.exports = async function startCommand(options) {
   console.log(chalk.cyan('  Project:  ') + chalk.white(projectData.name));
   console.log(chalk.cyan('  Local:    ') + chalk.white(`http://localhost:${port}`));
   console.log(chalk.cyan('  Network:  ') + chalk.white(`http://${host}:${port}`));
+  console.log(chalk.cyan('  dart_eval:') + chalk.white(evalManager.isInstalled ? ' ✓ Ready' : ' ✗ Not available'));
   console.log();
 
   if (options.qr) {
